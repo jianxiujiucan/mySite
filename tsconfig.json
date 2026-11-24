@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "node"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["web/src/*"],
+      "@shared/*": ["shared/*"]
+    }
+  },
+  "include": [
+    "web/src/**/*.ts",
+    "web/src/**/*.tsx",
+    "web/src/**/*.vue",
+    "admin/src/**/*.ts",
+    "admin/src/**/*.tsx",
+    "admin/src/**/*.vue",
+    "shared/**/*.ts",
+    "server/**/*.ts",
+    "web/vite.config.ts",
+    "admin/vite.config.ts",
+    "playwright.config.ts",
+    "tests/**/*.ts"
+  ]
+}

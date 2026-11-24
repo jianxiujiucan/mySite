@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+    <rect width="1200" height="800" fill="#e1e5e5"/>
+    <rect x="95" y="85" width="1010" height="630" rx="10" fill="#faf9f5"/>
+    <text x="150" y="175" font-family="serif" font-size="54" fill="#20211e">山间光线</text>
+    <text x="150" y="215" font-family="sans-serif" font-size="18" letter-spacing="5" fill="#777a71">PHOTO JOURNAL</text>
+    <g transform="translate(150 275)"><g><rect width="400" height="330" fill="#d8dedb"/><circle cx="290" cy="85" r="45" fill="#a9b0a2"/><path d="M0 280L150 95L265 235L330 155L400 245V330H0Z" fill="#c5523a"/><path d="M0 300L130 195L230 270L310 220L400 290V330H0Z" fill="#20211e"/></g><g transform="translate(440)"><rect width="400" height="155" fill="#e4e1d8"/><path d="M0 130L120 35L210 120L300 55L400 130V155H0Z" fill="#a9b0a2"/><rect y="175" width="400" height="155" fill="#e8e1d9"/><circle cx="95" cy="250" r="42" fill="#c5523a"/><path d="M0 330L150 225L250 305L330 245L400 300V330H0Z" fill="#20211e"/></g></g>
+  </svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 960">
+  <rect width="800" height="960" fill="#f7f3e9"/>
+  <path d="M65 0V960M735 0V960" stroke="#d9d1c2" stroke-width="2"/>
+  <path d="M0 70H800M0 890H800" stroke="#e2dbce" stroke-width="2"/>
+  <text x="400" y="340" text-anchor="middle" font-family="KaiTi, STKaiti, SimSun, serif" font-size="270" fill="#20211e">行</text>
+<text x="400" y="625" text-anchor="middle" font-family="KaiTi, STKaiti, SimSun, serif" font-size="270" fill="#20211e">云</text>
+  <rect x="590" y="785" width="70" height="70" rx="4" fill="#c5523a"/>
+  <text x="625" y="823" text-anchor="middle" font-family="SimSun, serif" font-size="25" fill="#f7f3e9">宁静</text>
+  <text x="625" y="848" text-anchor="middle" font-family="SimSun, serif" font-size="25" fill="#f7f3e9">之印</text>
+  <text x="90" y="875" font-family="serif" font-size="18" fill="#777a71">练习 05</text>
+</svg>
