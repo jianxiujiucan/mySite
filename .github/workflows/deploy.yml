@@ -25,7 +25,15 @@ jobs:
             export PATH=/usr/local/bin:/usr/bin:/bin
             cd /opt/mysite
 
-            git fetch origin master
+            for attempt in 1 2 3; do
+              if timeout 45s git -c http.version=HTTP/1.1 fetch --depth=1 origin master; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                exit 1
+              fi
+              sleep 5
+            done
             git checkout -B master origin/master
 
             npm ci
