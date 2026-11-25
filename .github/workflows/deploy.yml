@@ -1,0 +1,45 @@
+name: Deploy mySite
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and deploy to Aliyun
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ALIYUN_HOST }}
+          username: ${{ secrets.ALIYUN_USER }}
+          key: ${{ secrets.ALIYUN_SSH_KEY }}
+          port: ${{ secrets.ALIYUN_PORT }}
+          script_stop: true
+          script: |
+            set -e
+            export PATH=/usr/local/bin:/usr/bin:/bin
+            cd /opt/mysite
+
+            git fetch origin master
+            if git show-ref --verify --quiet refs/heads/master; then
+              git checkout master
+            else
+              git checkout -b master origin/master
+            fi
+            git pull --ff-only origin master
+
+            npm ci
+            npm run thumbs:generate
+            npm run db:setup
+            npm run build
+
+            sudo systemctl restart mysite
+            sleep 3
+            sudo systemctl is-active mysite
+            curl --fail --silent --show-error --max-time 10 \
+              http://127.0.0.1:3002/api/health

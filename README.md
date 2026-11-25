@@ -2,6 +2,30 @@
 
 根据 Penpot 第三稿实现的完整个人网站。视觉采用米白、墨黑、浅灰与少量朱红，首页保留头像、名字和四个内容入口。
 
+## 自动部署
+
+推送到 `master` 分支会触发 `.github/workflows/deploy.yml`，通过 GitHub Actions 自动部署到阿里云，也可以在 Actions 页面手动运行。
+
+部署过程包括：拉取代码、安装依赖、补齐缩略图、执行幂等数据库迁移、构建前后台、重启 `mysite` 服务和 API 健康检查。线上项目位于 `/opt/mysite`，部署用户使用权限受限的 `deploy` 账号，不需要 root SSH 密钥。
+
+仓库需要以下 Actions Secrets：
+
+- `ALIYUN_HOST`：服务器公网 IP
+- `ALIYUN_PORT`：SSH 端口
+- `ALIYUN_USER`：部署用户名
+- `ALIYUN_SSH_KEY`：部署用户的 SSH 私钥
+
+日常发布：
+
+```bash
+git checkout master
+git add .
+git commit -m "你的更新说明"
+git push origin master
+```
+
+Actions 健康检查失败时，工作流会标记失败，请先在 Actions 日志中定位问题，不要直接重复推送。
+
 ## 目录结构
 
 ```text
