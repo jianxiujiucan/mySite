@@ -26,12 +26,7 @@ jobs:
             cd /opt/mysite
 
             git fetch origin master
-            if git show-ref --verify --quiet refs/heads/master; then
-              git checkout master
-            else
-              git checkout -b master origin/master
-            fi
-            git pull --ff-only origin master
+            git checkout -B master origin/master
 
             npm ci
             npm run thumbs:generate
