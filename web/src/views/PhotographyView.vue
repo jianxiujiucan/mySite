@@ -88,6 +88,7 @@ onMounted(async () => {
 
   img {
     width: 100%;
+    height: 8.35rem;
     aspect-ratio: 1;
     display: block;
     object-fit: cover;
