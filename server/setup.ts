@@ -54,72 +54,94 @@ try {
     ],
   );
 
-  for (const [index, project] of projects.entries()) {
-    await connection.execute(
-      `INSERT INTO projects
-       (slug, title, english, summary, description, image, features, related_route, related_label, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE id = id`,
-      [
-        project.slug,
-        project.title,
-        project.english,
-        project.summary,
-        project.description,
-        project.image,
-        JSON.stringify(project.features),
-        project.relatedRoute,
-        project.relatedLabel,
-        index,
-      ],
+  async function isEmptyTable(table: string) {
+    const [rows] = await connection.execute<mysql.RowDataPacket[]>(
+      `SELECT COUNT(*) AS count FROM \`${table}\``,
     );
+    return Number(rows[0].count) === 0;
   }
 
-  for (const [index, album] of albums.entries()) {
-    await connection.execute(
-      `INSERT INTO photo_albums (slug, title, subtitle, description, sort_order)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE id = id`,
-      [album.slug, album.title, album.subtitle, album.description || "", index],
-    );
-    const [rows] = await connection.execute<mysql.RowDataPacket[]>(
-      "SELECT id FROM photo_albums WHERE slug = ?",
-      [album.slug],
-    );
-    const albumId = rows[0].id;
-    for (const [photoIndex, photo] of album.photos.entries()) {
+  if (await isEmptyTable("projects")) {
+    for (const [index, project] of projects.entries()) {
       await connection.execute(
-        `INSERT INTO photos (id, album_id, src, alt, title, description, thumbnail_src, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO projects
+         (slug, title, english, summary, description, image, features, related_route, related_label, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE id = id`,
         [
-          photo.id,
-          albumId,
-          photo.src,
-          photo.alt,
-          photo.title,
-          photo.description || "",
-          photo.thumbnailSrc || "",
-          photoIndex,
+          project.slug,
+          project.title,
+          project.english,
+          project.summary,
+          project.description,
+          project.image,
+          JSON.stringify(project.features),
+          project.relatedRoute,
+          project.relatedLabel,
+          index,
         ],
       );
+    }
+  }
+
+  const shouldSeedAlbums = await isEmptyTable("photo_albums");
+
+  for (const [index, album] of albums.entries()) {
+    if (shouldSeedAlbums) {
+      await connection.execute(
+        `INSERT INTO photo_albums (slug, title, subtitle, description, sort_order)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE id = id`,
+        [album.slug, album.title, album.subtitle, album.description || "", index],
+      );
+    }
+    for (const [photoIndex, photo] of album.photos.entries()) {
+      if (shouldSeedAlbums) {
+        const [rows] = await connection.execute<mysql.RowDataPacket[]>(
+          "SELECT id FROM photo_albums WHERE slug = ?",
+          [album.slug],
+        );
+        await connection.execute(
+          `INSERT INTO photos (id, album_id, src, alt, title, description, thumbnail_src, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE id = id`,
+          [
+            photo.id,
+            rows[0].id,
+            photo.src,
+            photo.alt,
+            photo.title,
+            photo.description || "",
+            photo.thumbnailSrc || "",
+            photoIndex,
+          ],
+        );
+      }
       if (photo.thumbnailSrc) {
         await connection.execute(
           `UPDATE photos SET thumbnail_src = ?
-           WHERE id = ? AND (thumbnail_src IS NULL OR thumbnail_src = '')`,
-          [photo.thumbnailSrc, photo.id],
+           WHERE id = ? AND src = ?
+             AND (thumbnail_src IS NULL OR thumbnail_src = '')`,
+          [photo.thumbnailSrc, photo.id, photo.src],
+        );
+        await connection.execute(
+          `UPDATE photos SET thumbnail_src = ''
+           WHERE id = ? AND src <> ? AND thumbnail_src = ?`,
+          [photo.id, photo.src, photo.thumbnailSrc],
         );
       }
     }
   }
 
-  for (const [index, work] of calligraphyWorks.entries()) {
-    await connection.execute(
-      `INSERT INTO calligraphy_works (slug, title, src, alt, ratio, description, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE id = id`,
-      [work.slug, work.title, work.src, work.alt, work.ratio, work.description || "", index],
-    );
+  if (await isEmptyTable("calligraphy_works")) {
+    for (const [index, work] of calligraphyWorks.entries()) {
+      await connection.execute(
+        `INSERT INTO calligraphy_works (slug, title, src, alt, ratio, description, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE id = id`,
+        [work.slug, work.title, work.src, work.alt, work.ratio, work.description || "", index],
+      );
+    }
   }
 
   console.log(`MySQL database "${database}" is ready.`);
