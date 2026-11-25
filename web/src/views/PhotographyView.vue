@@ -35,9 +35,12 @@ onMounted(async () => {
             <img
               v-for="photo in album.photos.slice(0, 4)"
               :key="photo.id"
-              :src="photo.src"
+              :src="photo.thumbnailSrc || photo.src"
               :alt="photo.alt"
               loading="lazy"
+              decoding="async"
+              width="640"
+              height="640"
             />
           </div>
           <div class="album-card__body">

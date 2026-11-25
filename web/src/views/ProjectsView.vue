@@ -31,7 +31,12 @@ onMounted(async () => {
           :to="`/projects/${project.slug}`"
         >
           <div class="project-card__image">
-            <img :src="project.image" :alt="`${project.title}界面示意`" />
+            <img
+              :src="project.image"
+              :alt="`${project.title}界面示意`"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
           <div class="project-card__body">
             <p class="project-card__meta">

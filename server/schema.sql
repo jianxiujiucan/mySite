@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS photos (
   alt VARCHAR(512) NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT,
+  thumbnail_src VARCHAR(512),
   sort_order INT NOT NULL DEFAULT 0,
   CONSTRAINT fk_photos_album
     FOREIGN KEY (album_id) REFERENCES photo_albums (id)

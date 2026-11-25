@@ -128,7 +128,8 @@ async function loadAlbums(slug?: string) {
     slug ? [slug] : [],
   );
   const [photoRows] = await pool!.query<RowDataPacket[]>(
-    "SELECT id, album_id AS albumId, src, alt, title, description FROM photos ORDER BY sort_order, id",
+    `SELECT id, album_id AS albumId, src, alt, title, description,
+            thumbnail_src AS thumbnailSrc FROM photos ORDER BY sort_order, id`,
   );
   return albumRows.map((album) => ({
     id: album.id,
@@ -138,12 +139,13 @@ async function loadAlbums(slug?: string) {
     description: album.description || "",
     photos: photoRows
       .filter((photo) => photo.albumId === album.id)
-      .map(({ id, src, alt, title, description }) => ({
+      .map(({ id, src, alt, title, description, thumbnailSrc }) => ({
         id,
         src,
         alt,
         title,
         description: description || "",
+        thumbnailSrc: thumbnailSrc || "",
       })),
   }));
 }

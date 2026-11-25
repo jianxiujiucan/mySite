@@ -21,6 +21,7 @@ try {
   const additionalColumns = [
     ["photo_albums", "description", "TEXT NULL"],
     ["photos", "description", "TEXT NULL"],
+    ["photos", "thumbnail_src", "VARCHAR(512) NULL"],
     ["calligraphy_works", "description", "TEXT NULL"],
   ] as const;
 
@@ -88,11 +89,27 @@ try {
     const albumId = rows[0].id;
     for (const [photoIndex, photo] of album.photos.entries()) {
       await connection.execute(
-        `INSERT INTO photos (id, album_id, src, alt, title, description, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO photos (id, album_id, src, alt, title, description, thumbnail_src, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE id = id`,
-        [photo.id, albumId, photo.src, photo.alt, photo.title, photo.description || "", photoIndex],
+        [
+          photo.id,
+          albumId,
+          photo.src,
+          photo.alt,
+          photo.title,
+          photo.description || "",
+          photo.thumbnailSrc || "",
+          photoIndex,
+        ],
       );
+      if (photo.thumbnailSrc) {
+        await connection.execute(
+          `UPDATE photos SET thumbnail_src = ?
+           WHERE id = ? AND (thumbnail_src IS NULL OR thumbnail_src = '')`,
+          [photo.thumbnailSrc, photo.id],
+        );
+      }
     }
   }
 

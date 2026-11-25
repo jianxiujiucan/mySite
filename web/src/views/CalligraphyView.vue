@@ -45,7 +45,12 @@ onMounted(async () => {
           @click="selected = index"
         >
           <span class="work__image" :style="{ aspectRatio: work.ratio }">
-            <img :src="work.src" :alt="work.alt" loading="lazy" />
+            <img
+              :src="work.src"
+              :alt="work.alt"
+              loading="lazy"
+              decoding="async"
+            />
             <Expand :size="20" aria-hidden="true" />
           </span>
           <span class="work__title">

@@ -24,6 +24,7 @@ export interface Photo {
   alt: string;
   title: string;
   description?: string;
+  thumbnailSrc?: string;
 }
 
 export interface PhotoAlbum {

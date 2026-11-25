@@ -28,7 +28,7 @@ mySite/
 - Vue 3、TypeScript、Vite
 - SASS，颜色统一使用 `:root` 中的 CSS 原生变量
 - Vue Router，包含首页、简介、项目、项目详情、摄影、相册详情、书法和 404 页面
-- Node.js、Express、MySQL（mysql2）
+- Node.js、Express、MySQL（mysql2）、Sharp 图片处理
 - Playwright 浏览器测试
 
 ## 内容管理后台
@@ -41,6 +41,8 @@ mySite/
 - 书法：作品图片、标题、显示比例和详情，支持新增、编辑和删除。
 
 图片字段支持本地上传和 `http(s)` 外链。上传图片保存在 `uploads/`，支持 JPG、PNG、WebP、GIF、AVIF，单张最大 8MB。上传文件需要随项目一起备份。
+
+摄影图片上传成功后会同时生成 640×640 的 WebP 缩略图。相册封面和照片列表使用缩略图，灯箱继续使用原图。摄影、书法和项目列表图片使用原生懒加载与异步解码。
 
 后台账号和密码由 `.env` 中的 `ADMIN_USERNAME`、`ADMIN_PASSWORD` 设置。当前本地账号为 `admin`，密码请查看本地 `.env`。登录会话保存在内存中，有效期 12 小时；重启 API 后需要重新登录。
 
@@ -91,6 +93,12 @@ npm test
 测试使用本机 Chrome。运行前请先启动 `npm run dev`。
 
 后台测试会在 MySQL 中创建并删除带 `test-` 前缀的临时项目、相册和书法作品，用于验证真实新增、外链、本地上传与删除流程。
+
+需要为内置照片或历史上传图片补齐缩略图时执行：
+
+```bash
+npm run thumbs:generate
+```
 
 ## 内容维护
 

@@ -51,7 +51,14 @@ watch(() => route.params.slug, load);
             @click="selected = index"
           >
             <span class="photo-item__image">
-              <img :src="photo.src" :alt="photo.alt" loading="lazy" />
+              <img
+                :src="photo.thumbnailSrc || photo.src"
+                :alt="photo.alt"
+                loading="lazy"
+                decoding="async"
+                width="640"
+                height="640"
+              />
               <Expand :size="20" aria-hidden="true" />
             </span>
             <span class="photo-item__title">{{ photo.title }}</span>

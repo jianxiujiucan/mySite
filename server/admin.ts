@@ -1,8 +1,10 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
+import { unlink } from "node:fs/promises";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { adminLogin, adminLogout, requireAdmin } from "./auth.js";
 import { pool } from "./db.js";
 import { uploadImage } from "./uploads.js";
+import { createUploadThumbnail, storedThumbnail } from "./thumbnails.js";
 
 const router = Router();
 
@@ -69,7 +71,8 @@ async function loadContent() {
     "SELECT id, slug, title, subtitle, description FROM photo_albums ORDER BY sort_order, id",
   );
   const [photoRows] = await pool!.query<RowDataPacket[]>(
-    `SELECT id, album_id AS albumId, src, alt, title, description
+    `SELECT id, album_id AS albumId, src, alt, title, description,
+            thumbnail_src AS thumbnailSrc
      FROM photos ORDER BY sort_order, id`,
   );
   const [workRows] = await pool!.query<RowDataPacket[]>(
@@ -112,6 +115,7 @@ async function loadContent() {
           alt: photo.alt,
           title: photo.title,
           description: photo.description || "",
+          thumbnailSrc: photo.thumbnailSrc || "",
         })),
     })),
     calligraphy: workRows.map((row) => ({
@@ -150,11 +154,13 @@ function albumValues(body: Record<string, unknown>) {
 }
 
 function photoValues(body: Record<string, unknown>) {
+  const src = imageUrl(body.src);
   return [
-    imageUrl(body.src),
+    src,
     text(body.alt, "图片描述"),
     text(body.title, "图片标题"),
     text(body.description, "图片详情", false),
+    storedThumbnail(src),
   ];
 }
 
@@ -185,10 +191,23 @@ router.get("/content", asyncRoute(async (_request, response) => {
   response.json(await loadContent());
 }));
 
-router.post("/uploads", uploadImage.single("image"), (request, response) => {
-  if (!request.file) throw new InputError("请选择要上传的图片");
-  response.status(201).json({ url: `/uploads/${request.file.filename}` });
-});
+router.post(
+  "/uploads",
+  uploadImage.single("image"),
+  asyncRoute(async (request, response) => {
+    if (!request.file) throw new InputError("请选择要上传的图片");
+    try {
+      const thumbnailUrl = await createUploadThumbnail(request.file.path);
+      response.status(201).json({
+        url: `/uploads/${request.file.filename}`,
+        thumbnailUrl,
+      });
+    } catch {
+      await unlink(request.file.path).catch(() => undefined);
+      throw new InputError("图片处理失败，请换一张有效的图片后重试");
+    }
+  }),
+);
 
 router.put("/profile", asyncRoute(async (request, response) => {
   const name = text(request.body.name, "名字");
@@ -256,8 +275,8 @@ router.delete("/albums/:id", asyncRoute(async (request, response) => {
 router.post("/albums/:id/photos", asyncRoute(async (request, response) => {
   const albumId = Number(request.params.id);
   const [result] = await pool!.execute<ResultSetHeader>(
-    `INSERT INTO photos (album_id, src, alt, title, description, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO photos (album_id, src, alt, title, description, thumbnail_src, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [albumId, ...photoValues(request.body), await nextSort("photos")],
   );
   response.status(201).json({ id: result.insertId });
@@ -265,7 +284,7 @@ router.post("/albums/:id/photos", asyncRoute(async (request, response) => {
 
 router.put("/photos/:id", asyncRoute(async (request, response) => {
   const [result] = await pool!.execute<ResultSetHeader>(
-    `UPDATE photos SET album_id = ?, src = ?, alt = ?, title = ?, description = ? WHERE id = ?`,
+    `UPDATE photos SET album_id = ?, src = ?, alt = ?, title = ?, description = ?, thumbnail_src = ? WHERE id = ?`,
     [Number(request.body.albumId), ...photoValues(request.body), Number(request.params.id)],
   );
   if (!result.affectedRows) response.status(404).json({ message: "图片不存在" });
