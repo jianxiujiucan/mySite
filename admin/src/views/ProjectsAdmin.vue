@@ -41,7 +41,7 @@ function createProject() {
     description: "",
     image: "",
     featuresText: "",
-    relatedRoute: "/projects",
+    relatedRoute: "",
     relatedLabel: "查看项目",
   };
   message.value = "";
@@ -181,7 +181,13 @@ async function remove() {
           </div>
           <div class="admin-field">
             <label for="project-route">关联链接</label>
-            <input id="project-route" v-model="draft.relatedRoute" required />
+            <input
+              id="project-route"
+              v-model="draft.relatedRoute"
+              placeholder="https://example.com/project"
+              required
+            />
+            <small>请填写完整的项目链接，点击后将在新标签页打开。</small>
           </div>
           <div class="admin-field">
             <label for="project-label">链接文字</label>

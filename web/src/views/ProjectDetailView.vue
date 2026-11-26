@@ -36,10 +36,15 @@ watch(() => route.params.slug, load);
               {{ feature }}
             </li>
           </ul>
-          <RouterLink class="primary-link" :to="project.relatedRoute">
+          <a
+            class="primary-link"
+            :href="project.relatedRoute"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {{ project.relatedLabel }}
             <ArrowRight :size="17" aria-hidden="true" />
-          </RouterLink>
+          </a>
         </div>
       </div>
       <div v-else class="not-found-inline">
