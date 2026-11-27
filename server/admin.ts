@@ -58,6 +58,14 @@ async function nextSort(table: string) {
   return Number(rows[0].next);
 }
 
+async function firstPhotoSort(albumId: number) {
+  const [rows] = await pool!.query<RowDataPacket[]>(
+    "SELECT COALESCE(MIN(sort_order), 0) - 1 AS next FROM photos WHERE album_id = ?",
+    [albumId],
+  );
+  return Number(rows[0].next);
+}
+
 async function loadContent() {
   const [profileRows] = await pool!.query<RowDataPacket[]>(
     "SELECT name, english_name AS englishName, avatar, introduction FROM profile WHERE id = 1",
@@ -258,6 +266,43 @@ router.post("/albums", asyncRoute(async (request, response) => {
   response.status(201).json({ id: result.insertId });
 }));
 
+router.put("/albums/order", asyncRoute(async (request, response) => {
+  const ids = request.body?.ids;
+  if (
+    !Array.isArray(ids) ||
+    !ids.length ||
+    ids.some((id) => !Number.isInteger(id) || id <= 0) ||
+    new Set(ids).size !== ids.length
+  ) {
+    throw new InputError("相册顺序无效，请刷新后重试");
+  }
+
+  const connection = await pool!.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query<RowDataPacket[]>(
+      "SELECT id FROM photo_albums FOR UPDATE",
+    );
+    const existingIds = new Set(rows.map((row) => Number(row.id)));
+    if (rows.length !== ids.length || ids.some((id) => !existingIds.has(id))) {
+      throw new InputError("相册列表已变化，请刷新后重新排序");
+    }
+    for (const [index, id] of ids.entries()) {
+      await connection.execute(
+        "UPDATE photo_albums SET sort_order = ? WHERE id = ?",
+        [index, id],
+      );
+    }
+    await connection.commit();
+    response.json({ ok: true });
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}));
+
 router.put("/albums/:id", asyncRoute(async (request, response) => {
   const [result] = await pool!.execute<ResultSetHeader>(
     "UPDATE photo_albums SET slug = ?, title = ?, subtitle = ?, description = ? WHERE id = ?",
@@ -277,7 +322,7 @@ router.post("/albums/:id/photos", asyncRoute(async (request, response) => {
   const [result] = await pool!.execute<ResultSetHeader>(
     `INSERT INTO photos (album_id, src, alt, title, description, thumbnail_src, sort_order)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [albumId, ...photoValues(request.body), await nextSort("photos")],
+    [albumId, ...photoValues(request.body), await firstPhotoSort(albumId)],
   );
   response.status(201).json({ id: result.insertId });
 }));

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  GripVertical,
   LoaderCircle,
   Pencil,
   Plus,
@@ -21,8 +22,23 @@ const draft = ref<AdminAlbum | null>(null);
 const loading = ref(true);
 const saving = ref(false);
 const savingPhoto = ref<number | null>(null);
+const savingAlbumOrder = ref(false);
+const draggedAlbumId = ref<number | null>(null);
+const dragOverAlbumId = ref<number | null>(null);
 const message = ref("");
 const error = ref("");
+const newPhotoKeys = new WeakMap<AdminPhoto, number>();
+let nextNewPhotoKey = 0;
+
+function photoKey(photo: AdminPhoto) {
+  if (photo.id) return `saved-${photo.id}`;
+  let key = newPhotoKeys.get(photo);
+  if (!key) {
+    key = ++nextNewPhotoKey;
+    newPhotoKeys.set(photo, key);
+  }
+  return `new-${key}`;
+}
 
 function select(album: AdminAlbum) {
   draft.value = structuredClone(toRaw(album));
@@ -86,7 +102,7 @@ async function saveAlbum() {
 
 function addPhoto() {
   if (!draft.value?.id) return;
-  draft.value.photos.push({
+  draft.value.photos.unshift({
     id: 0,
     albumId: draft.value.id,
     src: "",
@@ -143,6 +159,59 @@ async function removeAlbum() {
     error.value = errorMessage(reason);
   }
 }
+
+function startAlbumDrag(event: DragEvent, albumId: number) {
+  if (savingAlbumOrder.value) {
+    event.preventDefault();
+    return;
+  }
+  draggedAlbumId.value = albumId;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(albumId));
+  }
+}
+
+function dragOverAlbum(albumId: number) {
+  if (!draggedAlbumId.value || savingAlbumOrder.value) return;
+  dragOverAlbumId.value = draggedAlbumId.value === albumId ? null : albumId;
+}
+
+function endAlbumDrag() {
+  draggedAlbumId.value = null;
+  dragOverAlbumId.value = null;
+}
+
+async function dropAlbum(targetAlbumId: number) {
+  const sourceAlbumId = draggedAlbumId.value;
+  endAlbumDrag();
+  if (!sourceAlbumId || sourceAlbumId === targetAlbumId || savingAlbumOrder.value) return;
+
+  const sourceIndex = albums.value.findIndex((album) => album.id === sourceAlbumId);
+  const targetIndex = albums.value.findIndex((album) => album.id === targetAlbumId);
+  if (sourceIndex < 0 || targetIndex < 0) return;
+
+  const previousAlbums = [...albums.value];
+  const nextAlbums = [...albums.value];
+  const [movedAlbum] = nextAlbums.splice(sourceIndex, 1);
+  nextAlbums.splice(targetIndex, 0, movedAlbum);
+  albums.value = nextAlbums;
+  savingAlbumOrder.value = true;
+  message.value = "";
+  error.value = "";
+  try {
+    await adminRequest("/albums/order", {
+      method: "PUT",
+      body: { ids: nextAlbums.map((album) => album.id) },
+    });
+    message.value = "相册顺序已保存。";
+  } catch (reason) {
+    albums.value = previousAlbums;
+    error.value = errorMessage(reason);
+  } finally {
+    savingAlbumOrder.value = false;
+  }
+}
 </script>
 
 <template>
@@ -163,14 +232,27 @@ async function removeAlbum() {
     <p v-if="loading" class="admin-loading">正在读取相册…</p>
     <div v-else class="admin-split">
       <div class="admin-list">
+        <p class="admin-list__hint">
+          {{ savingAlbumOrder ? "正在保存相册顺序…" : "拖动相册可调整显示顺序，放下后自动保存。" }}
+        </p>
         <button
           v-for="album in albums"
           :key="album.id"
-          class="admin-list__item"
-          :class="{ 'is-active': draft?.id === album.id }"
+          class="admin-list__item admin-list__item--draggable"
+          :class="{
+            'is-active': draft?.id === album.id,
+            'is-dragging': draggedAlbumId === album.id,
+            'is-drag-over': dragOverAlbumId === album.id,
+          }"
           type="button"
+          :draggable="!savingAlbumOrder"
           @click="select(album)"
+          @dragstart="startAlbumDrag($event, album.id)"
+          @dragover.prevent="dragOverAlbum(album.id)"
+          @drop.prevent="dropAlbum(album.id)"
+          @dragend="endAlbumDrag"
         >
+          <GripVertical class="admin-list__drag-icon" :size="16" aria-hidden="true" />
           <span>
             {{ album.title }}
             <small>{{ album.photos.length }} 张照片</small>
@@ -238,7 +320,7 @@ async function removeAlbum() {
         <div v-else class="admin-photo-list">
           <form
             v-for="(photo, index) in draft.photos"
-            :key="photo.id || `new-${index}`"
+            :key="photoKey(photo)"
             class="admin-photo-editor"
             @submit.prevent="savePhoto(photo, index)"
           >

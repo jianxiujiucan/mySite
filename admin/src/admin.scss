@@ -148,6 +148,13 @@
   gap: 0.5rem;
 }
 
+.admin-list__hint {
+  margin: 0 0 0.5rem;
+  color: var(--my-muted-color);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
 .admin-list__item {
   width: 100%;
   min-height: 3.75rem;
@@ -174,6 +181,28 @@
     color: var(--my-muted-color);
     font-size: 0.75rem;
   }
+}
+
+.admin-list__item--draggable {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.is-dragging {
+    opacity: 0.45;
+  }
+
+  &.is-drag-over {
+    border-color: var(--my-main-color);
+    box-shadow: 0 -2px 0 var(--my-main-color);
+  }
+}
+
+.admin-list__drag-icon {
+  flex: 0 0 auto;
+  color: var(--my-muted-color);
 }
 
 .admin-editor {
